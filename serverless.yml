@@ -37,7 +37,7 @@ package:
   
 provider:
    name: aws
-   region: ${opt:region, 'ap-south-1'}
+   region: ${opt:region, 'ap-southeast-2'}
    stage: ${opt:stage, 'prod'}
    runtime: nodejs16.x
    
