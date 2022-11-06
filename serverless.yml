@@ -2,6 +2,7 @@ service: sms
 
 plugins: 
   - serverless-iam-roles-per-function
+  - serverless-aws-resource-names
   # - serverless-domain-manager
   - serverless-prune-plugin
   
