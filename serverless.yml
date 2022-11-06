@@ -37,7 +37,7 @@ custom:
   serverless-iam-roles-per-function:
     defaultInherit: true
   urls:
-    test: v1/test
+    test: /v1/test
     
 package:
   individually: true
@@ -50,12 +50,16 @@ provider:
   lambdaHashingVersion: 20201221
   httpApi:
     cors: true
+  logs:
+    httpApi: true
+
    
 functions:
   test:
     handler: functions/test.handler
     events:
-      - http:
+      - httpApi:
           method: GET
           path: /v1/test
-        
+    
+    
