@@ -1,5 +1,4 @@
 const generateResponse = (statusCode, body) => {
-  console.log("generating response");
   const isBase64Encoded = false;
   const headers = {
     "Access-Control-Allow-Origin": "*", // Required for CORS support to work
@@ -13,8 +12,6 @@ const generateResponse = (statusCode, body) => {
     body: JSON.stringify(body),
     headers,
   };
-
-  console.log("response: ", response);
 
   return response;
 };
