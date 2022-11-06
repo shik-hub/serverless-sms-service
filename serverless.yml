@@ -7,13 +7,16 @@ plugins:
   - serverless-prune-plugin
   
 custom:
-  stage: 'prod'
-  region: 'ap-south-1'
+  stage: ${opt:stage, 'stg'}
+  region: ${opt:region, 'ap-southeast-2'}
   prune:
     automatic: ${self:custom.prune_by_stage.${self:custom.stage}.automatic, self:custom.prune_by_stage.other.automatic}
     number: ${self:custom.prune_by_stage.${self:custom.stage}.number, self:custom.prune_by_stage.other.number}
   prune_by_stage:
-    prod:
+    stg:
+      automatic: true
+      number: 10
+    prd:
       automatic: true
       number: 3
     other:
@@ -23,11 +26,14 @@ custom:
     source: mapping.json
   deploymentBucketName: ${self:custom.stage}-${self:custom.region}-s3-4-serverless-deployment
   domains:
-    prod: api.${self:custom.region}.hubhello.com
+    stg: api.${self:custom.region}.hubhello.com
+    prd: api.${self:custom.region}.hubhello.com
   customDomainBaseMapping:
-    prod:
-      prod: 'sms'
-    other: sms
+    prd:
+      prd: 'sms'
+    stg:
+      stg: 'sms'
+    other: 'sms'
   serverless-iam-roles-per-function:
     defaultInherit: true
   urls:
@@ -37,16 +43,19 @@ package:
   individually: true
   
 provider:
-   name: aws
-   region: ${opt:region, 'ap-southeast-2'}
-   stage: ${opt:stage, 'prod'}
-   runtime: nodejs16.x
+  name: aws
+  region: ${opt:stage, 'ap-southeast-2'}
+  stage: ${opt:region, 'stg'}
+  runtime: nodejs16.x
+  lambdaHashingVersion: 20201221
+  httpApi:
+    cors: true
    
 functions:
   test:
     handler: functions/test.handler
     events:
       - http:
-          path: ${self.custom.urls.test}
-          method: get
+          method: GET
+          path: /v1/test
         
