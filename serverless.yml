@@ -1,0 +1,65 @@
+service: sms
+
+plugins: 
+  - serverless-iam-roles-per-function
+  - serverless-aws-resource-names
+  # - serverless-domain-manager
+  - serverless-prune-plugin
+  
+custom:
+  stage: ${opt:stage, 'stg'}
+  region: ${opt:region, 'ap-southeast-2'}
+  prune:
+    automatic: ${self:custom.prune_by_stage.${self:custom.stage}.automatic, self:custom.prune_by_stage.other.automatic}
+    number: ${self:custom.prune_by_stage.${self:custom.stage}.number, self:custom.prune_by_stage.other.number}
+  prune_by_stage:
+    stg:
+      automatic: true
+      number: 10
+    prd:
+      automatic: true
+      number: 3
+    other:
+      automatic: false
+      number: 0
+  serverless-aws-resource-names:
+    source: mapping.json
+  deploymentBucketName: ${self:custom.stage}-${self:custom.region}-s3-4-serverless-deployment
+  domains:
+    stg: api.${self:custom.region}.hubhello.com
+    prd: api.${self:custom.region}.hubhello.com
+  customDomainBaseMapping:
+    prd:
+      prd: 'sms'
+    stg:
+      stg: 'sms'
+    other: 'sms'
+  serverless-iam-roles-per-function:
+    defaultInherit: true
+  urls:
+    test: v1/test
+    
+package:
+  individually: true
+  
+provider:
+  name: aws
+  region: ${opt:stage, 'ap-southeast-2'}
+  stage: ${opt:region, 'stg'}
+  runtime: nodejs16.x
+  lambdaHashingVersion: 20201221
+  httpApi:
+    cors: true
+  logs:
+    httpApi: true
+
+   
+functions:
+  test:
+    handler: functions/test.handler
+    events:
+      - http:
+          method: GET
+          path: v1/test
+    
+    
