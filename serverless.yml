@@ -37,7 +37,7 @@ custom:
   serverless-iam-roles-per-function:
     defaultInherit: true
   urls:
-    test: /v1/test
+    test: v1/test
     
 package:
   individually: true
@@ -58,8 +58,8 @@ functions:
   test:
     handler: functions/test.handler
     events:
-      - httpApi:
+      - http:
           method: GET
-          path: /v1/test
+          path: v1/test
     
     
