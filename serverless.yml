@@ -36,8 +36,6 @@ custom:
     other: 'sms'
   serverless-iam-roles-per-function:
     defaultInherit: true
-  urls:
-    test: v1/test
     
 package:
   individually: true
@@ -55,11 +53,17 @@ provider:
 
    
 functions:
-  test:
-    handler: functions/test.handler
+  send-sms:
+    handler: functions/send-sms.handler
     events:
       - http:
-          method: GET
-          path: v1/test
+          method: POST
+          path: v1/sms/send
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - sns:SetSMSAttributes
+          - sns:Publish
+        Resource: '*'
     
     
