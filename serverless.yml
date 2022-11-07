@@ -4,6 +4,7 @@ plugins:
   - serverless-iam-roles-per-function
   - serverless-aws-resource-names
   # - serverless-domain-manager
+  - serverless-add-api-key
   - serverless-prune-plugin
   
 custom:
@@ -36,6 +37,17 @@ custom:
     other: 'sms'
   serverless-iam-roles-per-function:
     defaultInherit: true
+  secrets:
+    smsApiKeySecretName: ${self:custom.stage}-${self:custom.region}-secret-4-${self:service}-service--api-key
+  apiKeys:
+    - name: ${self:custom.stage}-api-key-4-${self:service}-service
+      deleteAtRemoval: false
+      value: ${ssm:/aws/reference/secretsmanager/${self:custom.secrets.smsApiKeySecretName}}
+      usagePlan:
+        name: ${self:custom.stage}-usage-plan-4-${self:service}-service
+        throttle:
+          burstLimit: 200
+          rateLimit: 100
     
 package:
   individually: true
@@ -44,6 +56,7 @@ provider:
   name: aws
   region: ${opt:stage, 'ap-southeast-2'}
   stage: ${opt:region, 'stg'}
+  stackName: ${self:custom.stage}-${self:provider.region}-${self:service}-service
   runtime: nodejs16.x
   lambdaHashingVersion: 20201221
   httpApi:
@@ -59,6 +72,8 @@ functions:
       - http:
           method: POST
           path: v1/sms/send
+          private: true
+          cors: true
     iamRoleStatements:
       - Effect: Allow
         Action:
