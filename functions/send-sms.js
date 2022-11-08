@@ -5,8 +5,6 @@ const { requestValidator } = require("../utils/schema/send-sms/request");
 
 const SNS = new AWS.SNS();
 
-const DefaultSMSType = "Promotional";
-
 const handler = async (event) => {
   try {
     const body = JSON.parse(event.body);
@@ -21,9 +19,11 @@ const handler = async (event) => {
       return generateResponse(400, { message: "Invalid parameters" });
     }
 
+    console.log("smsType: ", body.type);
+
     const attributeParams = {
       attributes: {
-        DefaultSMSType,
+        DefaultSMSType: body.type, // value can be Promotional/Transactional
       },
     };
 
@@ -39,6 +39,7 @@ const handler = async (event) => {
 
     console.log("attributeResponse", attributeResponse);
     console.log("response", response);
+    console.log("SMS has been sent successfully");
     return generateResponse(200, { message: "SMS has been sent" });
   } catch (error) {
     console.error(error);
