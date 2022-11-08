@@ -1,36 +1,45 @@
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
+
 const { generateResponse } = require("../utils/response");
+const { requestValidator } = require("../utils/schema/send-sms/request");
 
 const SNS = new AWS.SNS();
 
-const DefaultSMSType = 'Promotional';
+const DefaultSMSType = "Promotional";
 
 const handler = async (event) => {
   try {
     const body = JSON.parse(event.body);
 
-    if (!body || !body.phoneNumber || !body.message) {
-      console.error('Phone number or message is missing')
-      return generateResponse(400, { message: 'Invalid parameters' });
+    if (!body) {
+      console.error("Request body missing");
+      return generateResponse(400, { message: "Invalid parameters" });
     }
-    
+
+    if (!requestValidator(body)) {
+      console.error("Incorrect schema of body");
+      return generateResponse(400, { message: "Invalid parameters" });
+    }
+
     const attributeParams = {
       attributes: {
         DefaultSMSType,
       },
     };
-    
+
     const messageParams = {
       Message: body.message,
       PhoneNumber: body.phoneNumber,
     };
-    
-    const attributeResponse = await SNS.setSMSAttributes(attributeParams).promise();
+
+    const attributeResponse = await SNS.setSMSAttributes(
+      attributeParams
+    ).promise();
     const response = await SNS.publish(messageParams).promise();
-    
-    console.log('attributeResponse', attributeResponse);
-    console.log('response', response);
-    return generateResponse(200, { message: 'SMS has been sent' });
+
+    console.log("attributeResponse", attributeResponse);
+    console.log("response", response);
+    return generateResponse(200, { message: "SMS has been sent" });
   } catch (error) {
     console.error(error);
     return generateResponse(500, {
