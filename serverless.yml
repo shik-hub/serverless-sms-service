@@ -13,6 +13,18 @@ custom:
   prune:
     automatic: ${self:custom.prune_by_stage.${self:custom.stage}.automatic, self:custom.prune_by_stage.other.automatic}
     number: ${self:custom.prune_by_stage.${self:custom.stage}.number, self:custom.prune_by_stage.other.number}
+  names:
+    notificationSNSTopic: ${self:custom.stage}-${self:custom.region}-sns-4-${self:service}--notification-topic
+    notificationSNSTopicDLQ: ${self:custom.stage}-${self:custom.region}-sqs-4-${self:service}--notification-sns-topic-dlq
+    SMSQueue: ${self:custom.stage}-${self:custom.region}-sqs-4-${self:service}--sms-queue
+    SMSDLQ: ${self:custom.stage}-${self:custom.region}-sqs-4-${self:service}--sms-dlq
+    snsSqsSharedKeyAlias: alias/${self:custom.stage}-${self:custom.region}-kms-4-${self:service}--sns-sqs-shared
+    notificationTopicArn:  'arn:aws:sns:${self:custom.region}:${aws:accountId}:${self:custom.names.notificationSNSTopic}'
+  settings:
+    stg:
+      kmsPolicy: 'KMSAdmin'
+    prd:
+      kmsPolicy: 'KMSAdmin'
   prune_by_stage:
     stg:
       automatic: true
@@ -56,7 +68,7 @@ provider:
   name: aws
   region: ${opt:region, 'ap-southeast-2'}
   stage: ${opt:stage, 'stg'}
-  stackName: ${self:custom.stage}-${self:provider.region}-${self:service}-service
+  stackName: ${self:custom.stage}-${self:custom.region}-${self:service}-service
   runtime: nodejs16.x
   lambdaHashingVersion: 20201221
   httpApi:
@@ -80,5 +92,21 @@ functions:
           - sns:SetSMSAttributes
           - sns:Publish
         Resource: '*'
-    
+
+  bulk-send-sms:
+    handler: functions/bulk/send-sms.handler
+    events:
+      - http:
+          method: POST
+          path: v1/bulk/sms/send
+          private: true
+          cors: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - sns:Publish
+        Resource: 
+          - ${self:custom.names.notificationTopicArn}
+
+resources: ${file(serverless/resources.yml)}
     
