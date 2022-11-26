@@ -93,7 +93,7 @@ functions:
           - sns:Publish
         Resource: '*'
 
-  bulk-send-sms:
+  bulk-sms-send:
     handler: functions/bulk/send-sms.handler
     events:
       - http:

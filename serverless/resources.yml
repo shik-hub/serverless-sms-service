@@ -10,7 +10,6 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: ${self:custom.names.notificationSNSTopicDLQ}
-      FifoQueue: false
       MessageRetentionPeriod: 1209600 # 14 days in seconds
       KmsMasterKeyId: ${self:custom.names.snsSqsSharedKeyAlias}
   NotificationSNSTopicDLQPolicy:
@@ -46,7 +45,6 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: ${self:custom.names.SMSQueue}
-      FifoQueue: false
       VisibilityTimeout: 40 # 10 seconds more than the poller lambda timeour
       KmsMasterKeyId: ${self:custom.names.snsSqsSharedKeyAlias}
       RedrivePolicy:
@@ -84,7 +82,6 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: ${self:custom.names.SMSDLQ}
-      FifoQueue: false
       MessageRetentionPeriod: 1209600 # 14 days in seconds
       KmsMasterKeyId: ${self:custom.names.snsSqsSharedKeyAlias}
   PushNotificationDLQPolicy:
@@ -153,7 +150,7 @@ Resources:
             Principal:
               AWS:
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-                - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${self:custom.settings.${self:custom.stage}.kmsPolicy}'
+                # TODO: - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${self:custom.settings.${self:custom.stage}.kmsPolicy}'
             Action:
               - 'kms:*'
             Resource: '*'

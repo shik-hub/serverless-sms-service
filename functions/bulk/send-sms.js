@@ -29,16 +29,18 @@ const handler = async (event) => {
 
     console.log('body', body);
 
-    return generateResponse(200, { message: "Working" });
+    const attributeResponse = await SNS.setSMSAttributes(
+      attributeParams
+    ).promise();
+    
+    
+    
+    
 
     const messageParams = {
       Message: body.message,
       PhoneNumber: body.phoneNumber,
     };
-
-    const attributeResponse = await SNS.setSMSAttributes(
-      attributeParams
-    ).promise();
     const response = await SNS.publish(messageParams).promise();
 
     console.log("attributeResponse", attributeResponse);

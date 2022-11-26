@@ -8,20 +8,20 @@ const requestSchema = {
       type: "array",
       items: {
         type: "string",
-        pattern: "^\\+\\d{8,14}$"
+        pattern: "^\\+\\d{8,14}$",
       },
       minItems: 1,
       maxItems: 200,
     },
-    message: {type: "string", "minLength": 1},
-    type: { "enum": ["Promotional", "Transactional"] }
+    message: { type: "string", minLength: 1 },
+    type: { enum: ["Promotional", "Transactional"] },
   },
-  required: ["phoneNumber", "message", "type"],
+  required: ["phoneNumbers", "message", "type"],
   additionalProperties: false,
-}
+};
 
 const requestValidator = ajv.compile(requestSchema);
 
 module.exports = {
-    requestValidator
+  requestValidator,
 };
