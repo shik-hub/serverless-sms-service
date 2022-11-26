@@ -95,6 +95,8 @@ functions:
 
   bulk-sms-send:
     handler: functions/bulk/send-sms.handler
+    environment:
+      notificationTopicArn: ${self:custom.names.notificationTopicArn}
     events:
       - http:
           method: POST

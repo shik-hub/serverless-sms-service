@@ -5,7 +5,9 @@ const {
   requestValidator,
 } = require("../../utils/schema/bulk/send-sms/request");
 
-const SNS = new AWS.SNS();
+const { notificationTopicArn } = process.env;
+
+const SNS = new AWS.SNS({ apiVersion: "2010-03-31" });
 
 const handler = async (event) => {
   try {
@@ -21,38 +23,59 @@ const handler = async (event) => {
       return generateResponse(400, { message: "Invalid parameters" });
     }
 
-    console.log("smsType: ", body.type);
-
-    const attributeParams = {
-      attributes: {
-        DefaultSMSType: body.type, // value can be Promotional/Transactional
-      },
-    };
-
     console.log("body", body);
-
-    const attributeResponse = await SNS.setSMSAttributes(
-      attributeParams
-    ).promise();
-
-    console.log("attributeResponse", attributeResponse);
 
     const promises = [];
 
     body.phoneNumbers.forEach((phoneNumber) => {
-      const messageParams = {
-        Message: body.message,
-        PhoneNumber: phoneNumber,
+      const message = {
+        message: body.message,
+        phoneNumber: phoneNumber,
+        type: body.type,
       };
-      promises.push(SNS.publish(messageParams).promise());
+
+      const params = {
+        Message: JSON.stringify(message),
+        TopicArn: notificationTopicArn,
+      };
+
+      const promise = SNS.publish(params)
+        .promise()
+        .then((result) => {
+          return {
+            type: "SUCCESS",
+            params,
+            result,
+          };
+        })
+        .catch((error) => {
+          return {
+            type: "ERROR",
+            params,
+            error,
+          };
+        });
+
+      promises.push(promise);
     });
 
     const responses = await Promise.all(promises);
 
     console.log("response", responses);
 
-    console.log("Request received successfully");
-    return generateResponse(200, { message: "All data sent to SNS" });
+    const errors = responses.filter((response) => response.type === "ERROR");
+
+    if (errors.length > 0) {
+      console.log("Partial errors occurred");
+      generateResponse(202, {
+        message:
+          "Partial failure occurred. Refer to the error object for more details",
+        error: errors,
+      });
+    } else {
+      console.log("Request received successfully");
+      return generateResponse(200, { message: "All data sent to SNS" });
+    }
   } catch (error) {
     console.error(error);
     return generateResponse(500, {
