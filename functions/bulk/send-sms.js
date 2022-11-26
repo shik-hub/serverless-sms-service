@@ -1,7 +1,9 @@
 const AWS = require("aws-sdk");
 
 const { generateResponse } = require("../../utils/response");
-const { requestValidator } = require("../../utils/schema/bulk/send-sms/request");
+const {
+  requestValidator,
+} = require("../../utils/schema/bulk/send-sms/request");
 
 const SNS = new AWS.SNS();
 
@@ -27,26 +29,30 @@ const handler = async (event) => {
       },
     };
 
-    console.log('body', body);
+    console.log("body", body);
 
     const attributeResponse = await SNS.setSMSAttributes(
       attributeParams
     ).promise();
-    
-    
-    
-    
-
-    const messageParams = {
-      Message: body.message,
-      PhoneNumber: body.phoneNumber,
-    };
-    const response = await SNS.publish(messageParams).promise();
 
     console.log("attributeResponse", attributeResponse);
-    console.log("response", response);
-    console.log("SMS has been sent successfully");
-    return generateResponse(200, { message: "SMS has been sent" });
+
+    const promises = [];
+
+    body.phoneNumbers.forEach((phoneNumber) => {
+      const messageParams = {
+        Message: body.message,
+        PhoneNumber: phoneNumber,
+      };
+      promises.push(SNS.publish(messageParams).promise());
+    });
+
+    const responses = await Promise.all(promises);
+
+    console.log("response", responses);
+
+    console.log("Request received successfully");
+    return generateResponse(200, { message: "All data sent to SNS" });
   } catch (error) {
     console.error(error);
     return generateResponse(500, {
