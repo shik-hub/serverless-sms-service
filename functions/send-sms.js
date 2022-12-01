@@ -1,13 +1,32 @@
 const AWS = require("aws-sdk");
+const lodash = require("lodash");
 
 const { generateResponse } = require("../utils/response");
 const { requestValidator } = require("../utils/schema/send-sms/request");
 
 const SNS = new AWS.SNS();
 
+const SOURCE_SQS = "source_sqs";
+const SOURCE_HTTP = "source_http";
+
+const parseBody = (event) => {
+  let body;
+  if (lodash.get(event, "Records[0].eventSource", "") == "aws:sqs") {
+    console.log("source: ", SOURCE_SQS);
+    body = JSON.parse(JSON.parse(event.Records[0].body).Message);
+  } else if (lodash.get(event, "httpMethod", "").length > 0) {
+    console.log("source: ", SOURCE_HTTP);
+    body = JSON.parse(event.body);
+  } else {
+    throw new Error("Unknown source");
+  }
+  console.log("body: ", body);
+  return body;
+};
+
 const handler = async (event) => {
   try {
-    const body = JSON.parse(event.body);
+    const body = parseBody(event);
 
     if (!body) {
       console.error("Request body missing");
@@ -15,7 +34,7 @@ const handler = async (event) => {
     }
 
     if (!requestValidator(body)) {
-      console.error("Incorrect schema of body");
+      console.error("Incorrect schema of body", body);
       return generateResponse(400, { message: "Invalid parameters" });
     }
 

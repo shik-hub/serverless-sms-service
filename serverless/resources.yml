@@ -1,0 +1,162 @@
+Resources:
+  NotificationSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: ${self:custom.names.notificationSNSTopic}
+      FifoTopic: false
+      DisplayName: 'Notification Topic'
+      KmsMasterKeyId: ${self:custom.names.snsSqsSharedKeyAlias}
+  NotificationSNSTopicDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:custom.names.notificationSNSTopicDLQ}
+      MessageRetentionPeriod: 1209600 # 14 days in seconds
+      KmsMasterKeyId: ${self:custom.names.snsSqsSharedKeyAlias}
+  NotificationSNSTopicDLQPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: NotificationSNSTopicDLQ
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - sns.amazonaws.com
+            Action: 'SQS:SendMessage'
+            Resource: { Fn::GetAtt: [NotificationSNSTopicDLQ, 'Arn'] }
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  {
+                    'Fn::Join':
+                      [
+                        '',
+                        [
+                          'arn:aws:sns:${self:custom.region}:',
+                          { 'Ref': 'AWS::AccountId' },
+                          ':${self:custom.names.notificationSNSTopic}'
+                        ]
+                      ]
+                  }
+
+  SMSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:custom.names.SMSQueue}
+      VisibilityTimeout: 40 # 10 seconds more than the poller lambda timeour
+      KmsMasterKeyId: ${self:custom.names.snsSqsSharedKeyAlias}
+      RedrivePolicy:
+        deadLetterTargetArn: { Fn::GetAtt: [SMSDLQ, 'Arn'] }
+        maxReceiveCount: 3
+  SMSQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: SMSQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - sns.amazonaws.com
+            Action: 'SQS:SendMessage'
+            Resource: { Fn::GetAtt: [SMSQueue, 'Arn'] }
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  {
+                    'Fn::Join':
+                      [
+                        '',
+                        [
+                          'arn:aws:sns:${self:custom.region}:',
+                          { 'Ref': 'AWS::AccountId' },
+                          ':${self:custom.names.notificationSNSTopic}'
+                        ]
+                      ]
+                  }
+  SMSDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:custom.names.SMSDLQ}
+      MessageRetentionPeriod: 1209600 # 14 days in seconds
+      KmsMasterKeyId: ${self:custom.names.snsSqsSharedKeyAlias}
+  PushNotificationDLQPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: SMSDLQ
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action: 'SQS:SendMessage'
+            Resource: { Fn::GetAtt: [SMSDLQ, 'Arn'] }
+
+  SMSSNSSQSSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn:
+        {
+          'Fn::Join':
+            [
+              '',
+              [
+                'arn:aws:sns:${self:custom.region}:',
+                { 'Ref': 'AWS::AccountId' },
+                ':${self:custom.names.notificationSNSTopic}'
+              ]
+            ]
+        }
+      Endpoint: { Fn::GetAtt: [SMSQueue, 'Arn'] }
+      Protocol: sqs
+      RawMessageDelivery: false
+      DeliveryPolicy:
+        healthyRetryPolicy: # total 10 retries
+          numRetries: 10
+          numNoDelayRetries: 1
+          minDelayTarget: 1
+          numMinDelayRetries: 3
+          maxDelayTarget: 10
+          numMaxDelayRetries: 3
+          backoffFunction: exponential
+      RedrivePolicy:
+        deadLetterTargetArn:
+          { Fn::GetAtt: [NotificationSNSTopicDLQ, 'Arn'] }
+
+
+  SNSSQSSharedKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'Shared key between SNS and SQS'
+      Enabled: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal: '*'
+            Action:
+              - 'kms:Describe*'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+            Resource: '*'
+          - Effect: 'Allow'
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+                # TODO: - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${self:custom.settings.${self:custom.stage}.kmsPolicy}'
+            Action:
+              - 'kms:*'
+            Resource: '*'
+
+  SNSSQSSharedKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: ${self:custom.names.snsSqsSharedKeyAlias}
+      TargetKeyId: { Fn::GetAtt: [SNSSQSSharedKey, 'KeyId'] }
