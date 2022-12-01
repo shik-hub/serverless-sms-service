@@ -115,6 +115,22 @@ functions:
           - sns:Publish
         Resource: 
           - ${self:custom.names.notificationTopicArn}
+          
+  error-notify:
+    handler: functions/error-notify.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - NotificationSNSTopicDLQ
+              - Arn
+          batchSize: 1
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - SMSDLQ
+              - Arn
+          batchSize: 1
 
 resources: ${file(serverless/resources.yml)}
     
