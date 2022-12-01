@@ -54,8 +54,8 @@ package:
   
 provider:
   name: aws
-  region: ${opt:stage, 'ap-southeast-2'}
-  stage: ${opt:region, 'stg'}
+  region: ${opt:region, 'ap-southeast-2'}
+  stage: ${opt:stage, 'stg'}
   stackName: ${self:custom.stage}-${self:provider.region}-${self:service}-service
   runtime: nodejs16.x
   lambdaHashingVersion: 20201221

@@ -40,7 +40,10 @@ const handler = async (event) => {
     console.log("attributeResponse", attributeResponse);
     console.log("response", response);
     console.log("SMS has been sent successfully");
-    return generateResponse(200, { message: "SMS has been sent" });
+    return generateResponse(200, {
+      message: "SMS has been sent",
+      messageId: response.MessageId,
+    });
   } catch (error) {
     console.error(error);
     return generateResponse(500, {
