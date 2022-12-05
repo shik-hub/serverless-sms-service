@@ -19,10 +19,10 @@ const config = {
 
 let client = new Client(config);
 
-const createTables = async (client) => {
+const createTables = async (auroraClient) => {
   try {
     console.log("Creating table...");
-    const response = await client.query(CREATE_SMS_TABLE);
+    const response = await auroraClient.query(CREATE_SMS_TABLE);
     console.log("SMS table created successfully", { response });
   } catch (err) {
     console.log("Error while creting table.", err);
@@ -47,10 +47,10 @@ const initAuroraConnection = async () => {
   }
 };
 
-const endAuroraConnection = async (client) => {
+const endAuroraConnection = async (auroraClient) => {
   try {
     console.log("Disconnecting aurora client...");
-    const response = await client.end();
+    const response = await auroraClient.end();
     console.log("Disconnected", { response });
   } catch (err) {
     console.error("Error disconnecting DB: ", err);
