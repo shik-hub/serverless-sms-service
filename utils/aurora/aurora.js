@@ -1,5 +1,5 @@
 const { Client } = require("pg");
-const { CREATE_SMS_TABLE } = require("../schema");
+const { CREATE_SMS_TABLE } = require("./schema");
 
 const {
   auroraDBUsername,
@@ -23,16 +23,16 @@ const createTables = async (client) => {
   try {
     console.log("Creating table...");
     const response = await client.query(CREATE_SMS_TABLE);
-    console.log("SMS table created successfully");
+    console.log("SMS table created successfully", { response });
   } catch (err) {
     console.log("Error while creting table.", err);
     throw new Error("Error while creating table");
   }
 };
 
-const initAurora = async () => {
+const initAuroraConnection = async () => {
   try {
-    console.log("Connecting...", {
+    console.log("Connecting aurora client...", {
       auroraDBUsername,
       auroraDBHost,
       auroraDBPort,
@@ -47,6 +47,18 @@ const initAurora = async () => {
   }
 };
 
+const endAuroraConnection = async (client) => {
+  try {
+    console.log("Disconnecting aurora client...");
+    const response = await client.end();
+    console.log("Disconnected", { response });
+  } catch (err) {
+    console.error("Error disconnecting DB: ", err);
+    throw new Error("Could not disconnect DB");
+  }
+};
+
 module.exports = {
-  initAurora,
+  initAuroraConnection,
+  endAuroraConnection,
 };

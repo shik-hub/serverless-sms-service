@@ -1,7 +1,10 @@
 const AWS = require("aws-sdk");
 const lodash = require("lodash");
 
-const { initAurora } = require("../utils/aurora/aurora");
+const {
+  initAuroraConnection,
+  endAuroraConnection,
+} = require("../utils/aurora/aurora");
 const { generateResponse } = require("../utils/response");
 const { requestValidator } = require("../utils/schema/send-sms/request");
 
@@ -39,8 +42,9 @@ const handler = async (event) => {
       return generateResponse(400, { message: "Invalid parameters" });
     }
 
-    const auroraClient = await initAurora();
+    const auroraClient = await initAuroraConnection();
     console.log({ auroraClient });
+    await endAuroraConnection(auroraClient);
 
     console.log("smsType: ", body.type);
 
