@@ -21,6 +21,8 @@ const CREATE_SMS_TABLE =
     updated_at TIMESTAMPTZ NOT NULL // timestamp when the DB record was updated \
 )";
 
+// frontend fields sms_type, sms_category, sms_content, phone_number, receipient_user_name, receipient_user_id, request_user_id, client_id, enterprise_id, group_id
+
 module.exports = {
   CREATE_SMS_TABLE,
 };
