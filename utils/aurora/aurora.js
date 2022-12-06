@@ -25,7 +25,7 @@ const createTables = async (auroraClient) => {
     const response = await auroraClient.query(CREATE_SMS_TABLE);
     console.log("SMS table created successfully", { response });
   } catch (err) {
-    console.log("Error while creting table.", err);
+    console.log("Error while creating table.", err);
     throw new Error("Error while creating table");
   }
 };
@@ -39,6 +39,7 @@ const initAuroraConnection = async () => {
       auroraDBName,
     });
     await client.connect();
+    await createTables(client);
     console.log("Connected");
     return client;
   } catch (err) {
@@ -61,4 +62,5 @@ const endAuroraConnection = async (auroraClient) => {
 module.exports = {
   initAuroraConnection,
   endAuroraConnection,
+  createTables,
 };

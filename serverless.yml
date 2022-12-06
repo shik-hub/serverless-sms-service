@@ -23,7 +23,7 @@ custom:
     auroraDBName:  ${self:custom.stage}-${self:custom.region}-hubhello-postgres
     auroraDBArn:  'arn:aws:rds:${self:custom.region}:${aws:accountId}:${self:custom.names.auroraDBName}'
   secrets:
-    auroraDBSecret: ${ssm:/aws/reference/secretsmanager/prd-${self:custom.region}-secret-4-${self:service}--hubhello-postgres-creds}
+    auroraDBSecret: ${ssm:/aws/reference/secretsmanager/${self:custom.stage}-${self:custom.region}-secret-4-${self:service}--hubhello-postgres-creds}
     smsApiKeySecretName: ${ssm:/aws/reference/secretsmanager/${self:custom.stage}-${self:custom.region}-secret-4-${self:service}-service--api-key}
   settings:
     stg:
@@ -119,6 +119,10 @@ functions:
           - sns:SetSMSAttributes
           - sns:Publish
         Resource: '*'
+      # - Effect: Allow
+      #   Action:
+      #     - rds-data:*
+      #   Resource: '*'
 
   bulk-sms-send:
     handler: functions/bulk/send-sms.handler
