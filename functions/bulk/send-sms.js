@@ -19,7 +19,10 @@ const handler = async (event) => {
     }
 
     if (!requestValidator(body)) {
-      console.error("Incorrect schema of body");
+      console.error("Incorrect schema of body", {
+        body,
+        error: requestValidator.errors,
+      });
       return generateResponse(400, { message: "Invalid parameters" });
     }
 

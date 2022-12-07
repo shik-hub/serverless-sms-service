@@ -5,6 +5,8 @@ const {
   initAuroraConnection,
   endAuroraConnection,
 } = require("../utils/aurora/aurora");
+const { tables } = require("../utils/aurora/schema");
+const { status } = require("../utils/constants");
 const { generateResponse } = require("../utils/response");
 const { requestValidator } = require("../utils/schema/send-sms/request");
 
@@ -28,6 +30,43 @@ const parseBody = (event) => {
   return body;
 };
 
+const insertRequestInDB = async (body) => {
+  try {
+    const auroraClient = await initAuroraConnection();
+    console.log({ auroraClient });
+
+    const data = [
+      status.PENDING,
+      body.phoneNumber,
+      body.message,
+      body.type,
+      body.category,
+      body.recipientId,
+      body.recipientName,
+      body.requestUserId,
+      body.clientId,
+      body.enterpriseId,
+      body.groupId,
+    ];
+
+    const response = await auroraClient.query(
+      `INSERT INTO ${tables.SMS_STATUS} \
+      (status, phone_number, sms_content, sms_type, sms_category, recipient_user_id, \
+      recipient_user_name, request_user_id, client_id, enterprise_id, group_id, \
+      initiated_timestamp, created_at, updated_at) \
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now(), now(), now())`,
+      data
+    );
+
+    console.log("Inserted request into DB successfully", { response });
+
+    await endAuroraConnection(auroraClient);
+  } catch (err) {
+    console.error("Error inserting request in DB", err);
+    throw new Error("Error inserting request in DB");
+  }
+};
+
 const handler = async (event) => {
   try {
     const body = parseBody(event);
@@ -38,19 +77,20 @@ const handler = async (event) => {
     }
 
     if (!requestValidator(body)) {
-      console.error("Incorrect schema of body", body);
+      console.error("Incorrect schema of body", {
+        body,
+        error: requestValidator.errors,
+      });
       return generateResponse(400, { message: "Invalid parameters" });
     }
 
-    const auroraClient = await initAuroraConnection();
-    console.log({ auroraClient });
-    await endAuroraConnection(auroraClient);
+    await insertRequestInDB(body);
 
     console.log("smsType: ", body.type);
 
     const attributeParams = {
       attributes: {
-        DefaultSMSType: body.type, // value can be Promotional/Transactional
+        DefaultSMSType: body.type,
       },
     };
 

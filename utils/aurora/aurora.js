@@ -1,5 +1,5 @@
 const { Client } = require("pg");
-const { CREATE_SMS_TABLE } = require("./schema");
+const { tables, schema } = require("./schema");
 
 const {
   auroraDBUsername,
@@ -22,7 +22,9 @@ let client = new Client(config);
 const createTables = async (auroraClient) => {
   try {
     console.log("Creating table...");
-    const response = await auroraClient.query(CREATE_SMS_TABLE);
+    const response = await auroraClient.query(
+      `CREATE TABLE IF NOT EXISTS ${tables.SMS_STATUS} (${schema.SMS_STATUS})`
+    );
     console.log("SMS table created successfully", { response });
   } catch (err) {
     console.log("Error while creating table.", err);

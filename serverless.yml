@@ -119,10 +119,6 @@ functions:
           - sns:SetSMSAttributes
           - sns:Publish
         Resource: '*'
-      # - Effect: Allow
-      #   Action:
-      #     - rds-data:*
-      #   Resource: '*'
 
   bulk-sms-send:
     handler: functions/bulk/send-sms.handler
