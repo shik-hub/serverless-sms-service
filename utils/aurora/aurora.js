@@ -17,8 +17,6 @@ const config = {
   database: auroraDBName,
 };
 
-let client = new Client(config);
-
 const createTables = async (auroraClient) => {
   try {
     console.log("Creating table...");
@@ -40,8 +38,12 @@ const initAuroraConnection = async () => {
       auroraDBPort,
       auroraDBName,
     });
+
+    const client = new Client(config);
     await client.connect();
+
     await createTables(client);
+
     console.log("Connected");
     return client;
   } catch (err) {

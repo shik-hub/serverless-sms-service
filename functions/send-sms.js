@@ -41,7 +41,7 @@ const insertRequestInDB = async (body) => {
     console.log({ auroraClient });
 
     const data = [
-      status.PENDING,
+      status.REQUESTED,
       body.phoneNumber,
       body.message,
       body.type,
@@ -92,10 +92,10 @@ const updateMessageIdInDB = async (smsId, messageId) => {
     console.log({ auroraClient });
 
     const response = await auroraClient.query(
-      `UPDATE ${tables.SMS_STATUS} \
-      SET message_id = $1
-      WHERE sms_id = $2`,
-      [messageId, smsId]
+      `UPDATE ${tables.SMS_STATUS}
+      SET message_id = $1, status = $2
+      WHERE sms_id = $3`,
+      [messageId, status.PENDING, smsId]
     );
 
     console.log("Updated messageId DB successfully", { response });
