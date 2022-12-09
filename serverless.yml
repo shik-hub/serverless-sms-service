@@ -131,6 +131,9 @@ functions:
           path: v1/bulk/sms/send
           private: true
           cors: true
+    vpc:
+      securityGroupIds: ${self:custom.settings.${self:custom.stage}.securityGroupIds}
+      subnetIds: ${self:custom.settings.${self:custom.stage}.subnetIds}
     iamRoleStatements:
       - Effect: Allow
         Action:
