@@ -5,7 +5,7 @@ const tables = {
 const schema = {
   SMS_STATUS:
     "sms_id BIGSERIAL PRIMARY KEY, /* primary key */ \
-  message_id VARCHAR(50), /* unique message id returned by SNS */ \
+  message_id VARCHAR(50) UNIQUE, /* unique message id returned by SNS */ \
   sms_type VARCHAR(20) NOT NULL, /* Promotional or Transactional */ \
   sms_category VARCHAR(50) NOT NULL, /* Eg: Send Tour, Outstanding SMS etc. */ \
   sms_content TEXT, /* Actual content of the SMS sent */ \

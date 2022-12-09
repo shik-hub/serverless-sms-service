@@ -1,8 +1,6 @@
 const status = {
-  REQUESTED: "requested",
-  PENDING: "pending",
-  SUCCESS: "success",
-  FAILURE: "failure",
+  REQUESTED: "REQUESTED",
+  PENDING: "PENDING",
 };
 
 module.exports = {
