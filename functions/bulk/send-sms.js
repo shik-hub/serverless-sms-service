@@ -30,15 +30,22 @@ const handler = async (event) => {
 
     const promises = [];
 
-    body.phoneNumbers.forEach((phoneNumber) => {
-      const message = {
+    body.users.forEach((user) => {
+      const data = {
+        phoneNumber: user.phoneNumber,
+        recipientId: user.recipientId,
+        recipientName: user.recipientName,
         message: body.message,
-        phoneNumber: phoneNumber,
         type: body.type,
+        category: body.category,
+        requestUserId: body.requestUserId,
+        clientId: body.clientId,
+        enterpriseId: body.enterpriseId,
+        groupId: body.groupId
       };
 
       const params = {
-        Message: JSON.stringify(message),
+        Message: JSON.stringify(data),
         TopicArn: notificationTopicArn,
       };
 
