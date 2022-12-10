@@ -1,8 +1,10 @@
-const status = {
-  REQUESTED: "REQUESTED",
-  PENDING: "PENDING",
-};
+const sms = {
+  status: {
+    REQUESTED: "REQUESTED",
+    PENDING: "PENDING",
+  }
+}
 
 module.exports = {
-  status,
+  sms,
 };

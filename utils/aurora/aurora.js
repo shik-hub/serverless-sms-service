@@ -25,7 +25,7 @@ const createTables = async (auroraClient) => {
     );
     console.log("SMS table created successfully", { response });
   } catch (err) {
-    console.log("Error while creating table.", err);
+    console.error("Error while creating table.", err);
     throw new Error("Error while creating table");
   }
 };

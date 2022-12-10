@@ -87,9 +87,9 @@ const handler = async (event) => {
       return generateResponse(200, { message: "All data sent to SNS" });
     }
   } catch (error) {
-    console.error(error);
+    console.error("Error while sending SMS", { error });
     return generateResponse(500, {
-      message: "Some error occurred",
+      message: "Some error occurred while sending SMS",
     });
   }
 };

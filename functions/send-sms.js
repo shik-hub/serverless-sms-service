@@ -6,7 +6,7 @@ const {
   endAuroraConnection,
 } = require("../utils/aurora/aurora");
 const { tables } = require("../utils/aurora/schema");
-const { status } = require("../utils/constants");
+const { sms } = require("../utils/constants");
 const { generateResponse } = require("../utils/response");
 const { requestValidator } = require("../utils/schema/send-sms/request");
 
@@ -25,12 +25,13 @@ const parseBody = (event) => {
       console.log("source: ", SOURCE_HTTP);
       body = JSON.parse(event.body);
     } else {
+      console.error("Unknown source", { event });
       throw new Error("Unknown source");
     }
     console.log("body: ", body);
     return body;
   } catch (err) {
-    console.log("Error parsing body", { err, event });
+    console.error("Error parsing body", { err, event });
     throw new Error("Error parsing body");
   }
 };
@@ -41,7 +42,7 @@ const insertRequestInDB = async (body) => {
     console.log({ auroraClient });
 
     const data = [
-      status.REQUESTED,
+      sms.status.REQUESTED,
       body.phoneNumber,
       body.message,
       body.type,
@@ -95,14 +96,14 @@ const updateMessageIdInDB = async (smsId, messageId) => {
       `UPDATE ${tables.SMS_STATUS}
       SET message_id = $1, status = $2
       WHERE sms_id = $3`,
-      [messageId, status.PENDING, smsId]
+      [messageId, sms.status.PENDING, smsId]
     );
 
     console.log("Updated messageId DB successfully", { response });
 
     await endAuroraConnection(auroraClient);
   } catch (err) {
-    console.log("Error updating messageId in DB", {
+    console.error("Error updating messageId in DB", {
       err,
       smsId,
       messageId,
@@ -161,9 +162,9 @@ const handler = async (event) => {
       messageId,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Some error occurred while sending SMS", { error });
     return generateResponse(500, {
-      message: "Some error occurred",
+      message: "Some error occurred while sending SMS",
     });
   }
 };
