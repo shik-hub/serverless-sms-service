@@ -169,6 +169,25 @@ functions:
     vpc:
       securityGroupIds: ${self:custom.settings.${self:custom.stage}.securityGroupIds}
       subnetIds: ${self:custom.settings.${self:custom.stage}.subnetIds}
+  
+  get-report:
+    handler: functions/get-report.handler
+    timeout: 30
+    environment:
+      auroraDBUsername: ${self:custom.secrets.auroraDBSecret.username}
+      auroraDBPassword: ${self:custom.secrets.auroraDBSecret.password}
+      auroraDBHost: ${self:custom.secrets.auroraDBSecret.host}
+      auroraDBPort: ${self:custom.secrets.auroraDBSecret.port}
+      auroraDBName: ${self:custom.secrets.auroraDBSecret.databaseName}
+    events:
+      - http:
+          method: GET
+          path: v1/report
+          private: true
+          cors: true
+    vpc:
+      securityGroupIds: ${self:custom.settings.${self:custom.stage}.securityGroupIds}
+      subnetIds: ${self:custom.settings.${self:custom.stage}.subnetIds}
 
 resources: ${file(serverless/resources.yml)}
     
