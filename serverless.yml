@@ -71,6 +71,14 @@ custom:
         throttle:
           burstLimit: 200
           rateLimit: 100
+  # customDomains:
+  #   - rest:
+  #       endpointType: edge
+  #       stage: ${self:custom.stage}
+  #       basePath: 'sms'
+  #       domainName: ${self:custom.stage}.api.${self:provider.region}.hubhello.com
+  #       createRoute53Record: true
+  #       autoDomain: true
     
 package:
   individually: true
