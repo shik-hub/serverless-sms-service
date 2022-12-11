@@ -1,5 +1,5 @@
 const tables = {
-  SMS_STATUS: "sms_status_test",
+  SMS_STATUS: "sms_status",
 };
 
 const schema = {

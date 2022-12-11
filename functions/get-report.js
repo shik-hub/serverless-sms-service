@@ -38,7 +38,7 @@ const fetchReportData = async (fromDate, toDate) => {
     console.log({ auroraClient });
 
     const response = await auroraClient.query(
-      `SELECT * FROM ${tables.SMS_STATUS} WHERE initiated_timestamp >= $1 AND initiated_timestamp < $2`,
+      `SELECT * FROM ${tables.SMS_STATUS} WHERE initiated_timestamp >= $1 AND initiated_timestamp <= $2`,
       [fromDate, toDate]
     );
 
