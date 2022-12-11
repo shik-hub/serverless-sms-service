@@ -38,7 +38,9 @@ const fetchReportData = async (fromDate, toDate) => {
     console.log({ auroraClient });
 
     const response = await auroraClient.query(
-      `SELECT * FROM ${tables.SMS_STATUS} WHERE initiated_timestamp >= $1 AND initiated_timestamp <= $2`,
+      `SELECT * FROM ${tables.SMS_STATUS}
+      WHERE initiated_timestamp >= $1::date AND initiated_timestamp < ($2::date + '1 day'::interval)
+      ORDER BY initiated_timestamp ASC`,
       [fromDate, toDate]
     );
 
@@ -110,8 +112,8 @@ const handler = async (event) => {
 
     console.log(params);
 
-    const fromDate = moment(params.fromDate);
-    const toDate = moment(params.toDate);
+    const fromDate = params.fromDate;
+    const toDate = params.toDate;
 
     const reportData = await fetchReportData(fromDate, toDate);
 
