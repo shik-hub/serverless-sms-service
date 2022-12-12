@@ -3,7 +3,7 @@ service: sms
 plugins: 
   - serverless-iam-roles-per-function
   - serverless-aws-resource-names
-  # - serverless-domain-manager
+  - serverless-domain-manager
   - serverless-add-api-key
   - serverless-prune-plugin
   
@@ -71,14 +71,15 @@ custom:
         throttle:
           burstLimit: 200
           rateLimit: 100
-  # customDomains:
-  #   - rest:
-  #       endpointType: edge
-  #       stage: ${self:custom.stage}
-  #       basePath: 'sms'
-  #       domainName: ${self:custom.stage}.api.${self:provider.region}.hubhello.com
-  #       createRoute53Record: true
-  #       autoDomain: true
+  customDomains:
+    - rest:
+        endpointType: REGIONAL
+        stage: ${self:custom.stage}
+        basePath: 'sms'
+        certificateName: '*.api.hubhello.com'
+        domainName: ${self:custom.stage}.api.hubhello.com
+        createRoute53Record: true
+        autoDomain: false
     
 package:
   individually: true
