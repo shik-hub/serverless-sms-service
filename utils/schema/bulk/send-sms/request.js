@@ -8,7 +8,7 @@ const userArray = {
     recipientName: { type: "string", minLength: 1 },
     recipientId: { type: "integer", minimum: 0 },
   },
-  required: ["phoneNumber", "recipientId", "recipientName"],
+  required: ["phoneNumber", "recipientName"],
 };
 
 const requestSchema = {
@@ -35,7 +35,6 @@ const requestSchema = {
     "category",
     "requestUserId",
     "clientId",
-    "enterpriseId",
     "groupId",
   ],
   additionalProperties: false,
