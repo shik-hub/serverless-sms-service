@@ -9,6 +9,7 @@ const requestSchema = {
   properties: {
     fromDate: { type: "string", format: "date" },
     toDate: { type: "string", format: "date" },
+    groupId: { type: "string", minLength: 1 },
   },
   required: ["fromDate", "toDate"],
   additionalProperties: false,

@@ -32,7 +32,7 @@ const areParamsValid = (params) => {
   }
 }
 
-const fetchReportData = async (fromDate, toDate) => {
+const fetchReportData = async (fromDate, toDate, groupId) => {
   try {
     const auroraClient = await initAuroraConnection();
     console.log({ auroraClient });
@@ -40,13 +40,14 @@ const fetchReportData = async (fromDate, toDate) => {
     const response = await auroraClient.query(
       `SELECT * FROM ${tables.SMS_STATUS}
       WHERE initiated_timestamp >= $1::date AND initiated_timestamp < ($2::date + '1 day'::interval)
+        AND ($3::TEXT IS NULL OR group_id = $4)
       ORDER BY initiated_timestamp ASC`,
-      [fromDate, toDate]
+      [fromDate, toDate, groupId, groupId]
     );
 
     const data = response.rows;
 
-    console.log("Report data fetched successfully", { data });
+    console.log("Report data fetched successfully", { data, response });
 
     await endAuroraConnection(auroraClient);
 
@@ -112,10 +113,9 @@ const handler = async (event) => {
 
     console.log(params);
 
-    const fromDate = params.fromDate;
-    const toDate = params.toDate;
+    const { fromDate, toDate, groupId } = params;
 
-    const reportData = await fetchReportData(fromDate, toDate);
+    const reportData = await fetchReportData(fromDate, toDate, groupId);
 
     const report = transformData(reportData);
 
