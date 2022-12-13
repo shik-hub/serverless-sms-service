@@ -1,10 +1,29 @@
+const zlib = require("zlib");
+const util = require("util");
 const lodash = require("lodash");
+
+const gunzip = util.promisify(zlib.gunzip);
 
 const {
   initAuroraConnection,
   endAuroraConnection,
 } = require("../utils/aurora/aurora");
 const { tables } = require("../utils/aurora/schema");
+
+const decodeCloudwatchLog = async (event) => {
+  try {
+    const payload = Buffer.from(event.awslogs.data, 'base64');
+    let result = await gunzip(payload);
+    result = JSON.parse(result.toString());
+    console.log("Decoded data", { result, events: result.logEvents });
+    const data =  JSON.parse(result.logEvents[0].message);
+    console.log("SNS response data", { data, arrayLength: result.logEvents.length });
+    return data;
+  } catch (err) {
+    console.error("Error while decoding cloudwatch log", { err, event });
+    throw new Error("Error while decoding cloudwatch log");
+  }
+};
 
 const updateDeliveryDetailsInDB = async (
   messageId,
@@ -45,7 +64,7 @@ const updateDeliveryDetailsInDB = async (
       });
     } else {
       console.log(
-        "Execution should nevver reach here. Multiple sms have same messageId. Check immediately",
+        "Execution should never reach here. Multiple sms have same messageId. Check immediately",
         {
           rowCount,
           messageId,
@@ -70,14 +89,17 @@ const updateDeliveryDetailsInDB = async (
 
 const handler = async (event) => {
   try {
-    const messageId = lodash.get(event, "notification.messageId", undefined);
-    const priceInUsd = lodash.get(event, "delivery.priceInUSD", 0);
+
+    const result = await decodeCloudwatchLog(event);
+
+    const messageId = lodash.get(result, "notification.messageId", undefined);
+    const priceInUsd = lodash.get(result, "delivery.priceInUSD", 0);
     const providerResponse = lodash.get(
-      event,
+      result,
       "delivery.providerResponse",
       undefined
     );
-    const status = lodash.get(event, "status", undefined);
+    const status = lodash.get(result, "status", undefined);
 
     if (
       messageId === undefined ||
@@ -86,11 +108,13 @@ const handler = async (event) => {
     ) {
       console.error("Invalid parameters", {
         event,
+        result,
         messageId,
         priceInUsd,
         providerResponse,
         status,
       });
+      throw new Error("Invalid parameters");
     } else {
       await updateDeliveryDetailsInDB(
         messageId,
@@ -105,7 +129,7 @@ const handler = async (event) => {
   } catch (err) {
     console.error("Error while updating delivery status of SMS", {
       err,
-      event,
+      event
     });
     throw new Error("Error while updating delivery status of SMS");
   }
