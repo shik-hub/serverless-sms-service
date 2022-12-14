@@ -18,8 +18,11 @@
   "homepage": "https://github.com/shik-hub/serverless-sms-service#readme",
   "dependencies": {
     "ajv": "^8.11.0",
+    "ajv-formats": "^2.1.1",
     "aws-sdk": "^2.1248.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4",
+    "pg": "^8.8.0"
   },
   "devDependencies": {
     "serverless": "^3.24.1",

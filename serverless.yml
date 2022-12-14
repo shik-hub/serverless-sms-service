@@ -3,7 +3,7 @@ service: sms
 plugins: 
   - serverless-iam-roles-per-function
   - serverless-aws-resource-names
-  # - serverless-domain-manager
+  - serverless-domain-manager
   - serverless-add-api-key
   - serverless-prune-plugin
   
@@ -20,11 +20,24 @@ custom:
     SMSDLQ: ${self:custom.stage}-${self:custom.region}-sqs-4-${self:service}--sms-dlq
     snsSqsSharedKeyAlias: alias/${self:custom.stage}-${self:custom.region}-kms-4-${self:service}--sns-sqs-shared
     notificationTopicArn:  'arn:aws:sns:${self:custom.region}:${aws:accountId}:${self:custom.names.notificationSNSTopic}'
+    auroraDBName:  ${self:custom.stage}-${self:custom.region}-hubhello-postgres
+    auroraDBArn:  'arn:aws:rds:${self:custom.region}:${aws:accountId}:${self:custom.names.auroraDBName}'
+  secrets:
+    auroraDBSecret: ${ssm:/aws/reference/secretsmanager/${self:custom.stage}-${self:custom.region}-secret-4-${self:service}--hubhello-postgres-creds}
+    smsApiKeySecretName: ${ssm:/aws/reference/secretsmanager/${self:custom.stage}-${self:custom.region}-secret-4-${self:service}-service--api-key}
   settings:
     stg:
       kmsPolicy: 'KMSAdmin'
+      securityGroupIds:
+        - sg-0934035b5bcc5d16e
+      subnetIds:
+        - subnet-ba33fedf
     prd:
       kmsPolicy: 'KMSAdmin'
+      securityGroupIds:
+        - sg-0934035b5bcc5d16e
+      subnetIds:
+        - subnet-ba33fedf
   prune_by_stage:
     stg:
       automatic: true
@@ -49,17 +62,24 @@ custom:
     other: 'sms'
   serverless-iam-roles-per-function:
     defaultInherit: true
-  secrets:
-    smsApiKeySecretName: ${self:custom.stage}-${self:custom.region}-secret-4-${self:service}-service--api-key
   apiKeys:
     - name: ${self:custom.stage}-api-key-4-${self:service}-service
       deleteAtRemoval: false
-      value: ${ssm:/aws/reference/secretsmanager/${self:custom.secrets.smsApiKeySecretName}}
+      value: ${self:custom.secrets.smsApiKeySecretName}
       usagePlan:
         name: ${self:custom.stage}-usage-plan-4-${self:service}-service
         throttle:
           burstLimit: 200
           rateLimit: 100
+  customDomains:
+    - rest:
+        endpointType: REGIONAL
+        stage: ${self:custom.stage}
+        basePath: 'sms'
+        certificateName: '*.api.hubhello.com'
+        domainName: ${self:custom.stage}.api.hubhello.com
+        createRoute53Record: true
+        autoDomain: false
     
 package:
   individually: true
@@ -80,6 +100,13 @@ provider:
 functions:
   send-sms:
     handler: functions/send-sms.handler
+    timeout: 30
+    environment:
+      auroraDBUsername: ${self:custom.secrets.auroraDBSecret.username}
+      auroraDBPassword: ${self:custom.secrets.auroraDBSecret.password}
+      auroraDBHost: ${self:custom.secrets.auroraDBSecret.host}
+      auroraDBPort: ${self:custom.secrets.auroraDBSecret.port}
+      auroraDBName: ${self:custom.secrets.auroraDBSecret.databaseName}
     events:
       - http:
           method: POST
@@ -92,6 +119,9 @@ functions:
               - SMSQueue
               - Arn
           batchSize: 1
+    vpc:
+      securityGroupIds: ${self:custom.settings.${self:custom.stage}.securityGroupIds}
+      subnetIds: ${self:custom.settings.${self:custom.stage}.subnetIds}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -101,6 +131,7 @@ functions:
 
   bulk-sms-send:
     handler: functions/bulk/send-sms.handler
+    timeout: 30
     environment:
       notificationTopicArn: ${self:custom.names.notificationTopicArn}
     events:
@@ -109,6 +140,9 @@ functions:
           path: v1/bulk/sms/send
           private: true
           cors: true
+    vpc:
+      securityGroupIds: ${self:custom.settings.${self:custom.stage}.securityGroupIds}
+      subnetIds: ${self:custom.settings.${self:custom.stage}.subnetIds}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -131,6 +165,38 @@ functions:
               - SMSDLQ
               - Arn
           batchSize: 1
+          
+  sms-delivery:
+    handler: functions/sms-delivery.handler
+    timeout: 30
+    environment:
+      auroraDBUsername: ${self:custom.secrets.auroraDBSecret.username}
+      auroraDBPassword: ${self:custom.secrets.auroraDBSecret.password}
+      auroraDBHost: ${self:custom.secrets.auroraDBSecret.host}
+      auroraDBPort: ${self:custom.secrets.auroraDBSecret.port}
+      auroraDBName: ${self:custom.secrets.auroraDBSecret.databaseName}
+    vpc:
+      securityGroupIds: ${self:custom.settings.${self:custom.stage}.securityGroupIds}
+      subnetIds: ${self:custom.settings.${self:custom.stage}.subnetIds}
+  
+  get-report:
+    handler: functions/get-report.handler
+    timeout: 30
+    environment:
+      auroraDBUsername: ${self:custom.secrets.auroraDBSecret.username}
+      auroraDBPassword: ${self:custom.secrets.auroraDBSecret.password}
+      auroraDBHost: ${self:custom.secrets.auroraDBSecret.host}
+      auroraDBPort: ${self:custom.secrets.auroraDBSecret.port}
+      auroraDBName: ${self:custom.secrets.auroraDBSecret.databaseName}
+    events:
+      - http:
+          method: GET
+          path: v1/report
+          private: true
+          cors: true
+    vpc:
+      securityGroupIds: ${self:custom.settings.${self:custom.stage}.securityGroupIds}
+      subnetIds: ${self:custom.settings.${self:custom.stage}.subnetIds}
 
 resources: ${file(serverless/resources.yml)}
     

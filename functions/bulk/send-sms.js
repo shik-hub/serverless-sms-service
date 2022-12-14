@@ -19,7 +19,10 @@ const handler = async (event) => {
     }
 
     if (!requestValidator(body)) {
-      console.error("Incorrect schema of body");
+      console.error("Incorrect schema of body", {
+        body,
+        error: requestValidator.errors,
+      });
       return generateResponse(400, { message: "Invalid parameters" });
     }
 
@@ -27,15 +30,22 @@ const handler = async (event) => {
 
     const promises = [];
 
-    body.phoneNumbers.forEach((phoneNumber) => {
-      const message = {
+    body.users.forEach((user) => {
+      const data = {
+        phoneNumber: user.phoneNumber,
+        recipientId: user.recipientId,
+        recipientName: user.recipientName,
         message: body.message,
-        phoneNumber: phoneNumber,
         type: body.type,
+        category: body.category,
+        requestUserId: body.requestUserId,
+        clientId: body.clientId,
+        enterpriseId: body.enterpriseId,
+        groupId: body.groupId
       };
 
       const params = {
-        Message: JSON.stringify(message),
+        Message: JSON.stringify(data),
         TopicArn: notificationTopicArn,
       };
 
@@ -77,9 +87,9 @@ const handler = async (event) => {
       return generateResponse(200, { message: "All data sent to SNS" });
     }
   } catch (error) {
-    console.error(error);
+    console.error("Error while sending SMS", { error });
     return generateResponse(500, {
-      message: "Some error occurred",
+      message: "Some error occurred while sending SMS",
     });
   }
 };
