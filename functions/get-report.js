@@ -8,10 +8,14 @@ const { tables } = require("../utils/aurora/schema");
 const { generateResponse } = require("../utils/response");
 const { requestValidator } = require("../utils/schema/get-report/request");
 
+const LIMIT = 10;
+
 const areParamsValid = (params) => {
   try {
     const fromDate = moment(params.fromDate);
     const toDate = moment(params.toDate);
+    const page = params.page;
+    const perPage = params.perPage;
 
     const diffInDays = toDate.diff(fromDate, 'days'); // toDate minus fromDate
 
@@ -25,6 +29,20 @@ const areParamsValid = (params) => {
       throw new Error("date range should be less than 8 days");
     }
 
+    const isValidPage = !page || (page && Number(page) && Number(page) >= 0);
+
+    if (!isValidPage) {
+      console.error("page is not valid", { params });
+      throw new Error("page is not valid");
+    }
+
+    const isValidPerPage = !perPage || (perPage && Number(perPage) && Number(perPage) >= 0);
+
+    if (!isValidPerPage) {
+      console.error("perPage is not valid", { params });
+      throw new Error("perPage is not valid");
+    }
+
     return true;
   } catch (err) {
     console.error("Error while validating params", { err, params });
@@ -32,17 +50,23 @@ const areParamsValid = (params) => {
   }
 }
 
-const fetchReportData = async (fromDate, toDate, groupId) => {
+const fetchReportData = async (fromDate, toDate, groupId, page, perPage) => {
   try {
+    const offset = (page - 1) * perPage;
+
+    console.log( { perPage, offset, page });
+
     const auroraClient = await initAuroraConnection();
-    console.log({ auroraClient });
+    console.log({ auroraClient }); 
 
     const response = await auroraClient.query(
-      `SELECT * FROM ${tables.SMS_STATUS}
+      `SELECT *, count(*) OVER() AS total_count
+      FROM ${tables.SMS_STATUS}
       WHERE initiated_timestamp >= $1::date AND initiated_timestamp < ($2::date + '1 day'::interval)
         AND ($3::TEXT IS NULL OR group_id = $4)
-      ORDER BY initiated_timestamp ASC`,
-      [fromDate, toDate, groupId, groupId]
+      ORDER BY initiated_timestamp ASC
+      LIMIT $5 OFFSET $6`,
+      [fromDate, toDate, groupId, groupId, perPage, offset]
     );
 
     const data = response.rows;
@@ -58,9 +82,11 @@ const fetchReportData = async (fromDate, toDate, groupId) => {
   }
 }
 
-const transformData = (reportData) => {
+const transformData = (reportData, perPage) => {
   try {
+    let totalCount;
     const transformedData = reportData.map(datum => {
+        if (!totalCount) totalCount = datum.total_count;
         return {
           smsId: datum.sms_id,
           messageId: datum.message_id,
@@ -82,7 +108,10 @@ const transformData = (reportData) => {
         }
       });
 
-      return transformedData;
+      const pages = Math.ceil(totalCount / perPage);
+
+
+      return { totalCount, pages, transformedData };
   } catch (err) {
     console.error("Error while transforming report data", { err });
     throw new Error("Error while transforming report data");
@@ -114,14 +143,22 @@ const handler = async (event) => {
     console.log(params);
 
     const { fromDate, toDate, groupId } = params;
+    let page = Number(params.page);
+    let perPage = Number(params.perPage);
 
-    const reportData = await fetchReportData(fromDate, toDate, groupId);
+    if (!page) { page = 1 }
+    if (!perPage) { perPage = LIMIT }
 
-    const report = transformData(reportData);
+    const reportData = await fetchReportData(fromDate, toDate, groupId, page, perPage);
+
+    const data = transformData(reportData, perPage);
 
     console.log("Report has been generated successfully");
     return generateResponse(200, {
-      report
+      totalPages: data.pages,
+      totalEntries: data.totalCount,
+      currentPage: page,
+      report: data.transformedData
     });
   } catch (err) {
     console.error("Error while fetching report", { err });
