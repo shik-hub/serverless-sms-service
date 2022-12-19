@@ -10,6 +10,8 @@ const requestSchema = {
     fromDate: { type: "string", format: "date" },
     toDate: { type: "string", format: "date" },
     groupId: { type: "string", minLength: 1 },
+    page: { type: "string", minLength: 1 },
+    perPage: { type: "string", minLength: 1 }
   },
   required: ["fromDate", "toDate"],
   additionalProperties: false,
