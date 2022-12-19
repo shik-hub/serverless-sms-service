@@ -17,16 +17,14 @@ const areParamsValid = (params) => {
     const page = params.page;
     const perPage = params.perPage;
 
-    const diffInDays = toDate.diff(fromDate, 'days'); // toDate minus fromDate
-
-    if (diffInDays < 0) {
-      console.error("from date should be less than or equal to to date", { params, diffInDays });
-      throw new Error("from date should be less than or equal to to date");
+    if (!fromDate.isValid()) {
+      console.error("from date is not valid", { params });
+      throw new Error("from is not valid");
     }
 
-    if (diffInDays > 7) {
-      console.error("date range should be less than 8 days", { params, diffInDays });
-      throw new Error("date range should be less than 8 days");
+    if (!toDate.isValid()) {
+      console.error("to date is not valid", { params });
+      throw new Error("to is not valid");
     }
 
     const isValidPage = !page || (page && Number(page) && Number(page) >= 0);
