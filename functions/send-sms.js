@@ -14,6 +14,7 @@ const SNS = new AWS.SNS();
 
 const SOURCE_SQS = "source_sqs";
 const SOURCE_HTTP = "source_http";
+const SENDER_ID = "HubHello";
 
 const parseBody = (event) => {
   try {
@@ -35,6 +36,18 @@ const parseBody = (event) => {
     throw new Error("Error parsing body");
   }
 };
+
+const setDefaults = (body) => {
+  try {
+    if (!body.senderId) {
+      console.log("using default sender id")
+      body.senderId = SENDER_ID;
+    }
+  } catch (err) {
+    console.error("Error setting defaults", { err, body });
+    throw new Error("Error setting defaults");
+  }
+}
 
 const insertRequestInDB = async (body) => {
   try {
@@ -129,6 +142,8 @@ const handler = async (event) => {
       return generateResponse(400, { message: "Invalid parameters" });
     }
 
+    setDefaults(body);
+
     const smsId = await insertRequestInDB(body);
 
     console.log("smsType: ", body.type);
@@ -142,6 +157,12 @@ const handler = async (event) => {
     const messageParams = {
       Message: body.message,
       PhoneNumber: body.phoneNumber,
+      MessageAttributes: {
+        'AWS.SNS.SMS.SenderID': {
+          'DataType': 'String',
+          'StringValue': body.senderId
+        }
+      }
     };
 
     const attributeResponse = await SNS.setSMSAttributes(

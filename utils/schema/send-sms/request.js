@@ -14,6 +14,7 @@ const requestSchema = {
     clientId: { type: "integer", minimum: 0 },
     enterpriseId: { type: "integer", minimum: 0 },
     groupId: { type: "integer", minimum: 0 },
+    senderId: { type: "string", minLength: 1 },
   },
   required: [
     "phoneNumber",
