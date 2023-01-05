@@ -48,7 +48,7 @@ const areParamsValid = (params) => {
   }
 }
 
-const fetchReportData = async (fromDate, toDate, groupId, page, perPage) => {
+const fetchReportData = async (fromDate, toDate, groupId, page, perPage, enterpriseId) => {
   try {
     const offset = (page - 1) * perPage;
 
@@ -61,10 +61,10 @@ const fetchReportData = async (fromDate, toDate, groupId, page, perPage) => {
       `SELECT *, count(*) OVER() AS total_count
       FROM ${tables.SMS_STATUS}
       WHERE initiated_timestamp >= $1::date AND initiated_timestamp < ($2::date + '1 day'::interval)
-        AND ($3::TEXT IS NULL OR group_id = $4)
+        AND ($3::TEXT IS NULL OR group_id = $4) AND ($5::TEXT IS NULL OR enterprise_id = $6)
       ORDER BY initiated_timestamp ASC
-      LIMIT $5 OFFSET $6`,
-      [fromDate, toDate, groupId, groupId, perPage, offset]
+      LIMIT $7 OFFSET $8`,
+      [fromDate, toDate, groupId, groupId, enterpriseId, enterpriseId, perPage, offset]
     );
 
     const data = response.rows;
@@ -75,7 +75,10 @@ const fetchReportData = async (fromDate, toDate, groupId, page, perPage) => {
 
     return data;
   } catch (err) {
-    console.error("Error while fetching report data", { err, fromDate, toDate });
+    console.error(
+      "Error while fetching report data",
+      { err, fromDate, toDate, groupId, page, perPage, enterpriseId }
+    );
     throw new Error("Error while fetching report data");
   }
 }
@@ -91,6 +94,7 @@ const transformData = (reportData, perPage) => {
           dateRequested: datum.initiated_timestamp,
           dateSent: datum.sent_timestamp,
           smsCategory: datum.sms_category,
+          requestUserName: datum.request_user_name,
           message: datum.sms_content,
           recipient: {
             id: datum.recipient_user_id,
@@ -102,7 +106,8 @@ const transformData = (reportData, perPage) => {
           price: datum.price_in_usd,
           clientId: datum.client_id,
           enterpriseId: datum.enterprise_id,
-          groupId: datum.group_id
+          groupId: datum.group_id,
+          groupName: datum.group_name
         }
       });
 
@@ -140,14 +145,14 @@ const handler = async (event) => {
 
     console.log(params);
 
-    const { fromDate, toDate, groupId } = params;
+    const { fromDate, toDate, groupId, enterpriseId } = params;
     let page = Number(params.page);
     let perPage = Number(params.perPage);
 
     if (!page) { page = 1 }
     if (!perPage) { perPage = LIMIT }
 
-    const reportData = await fetchReportData(fromDate, toDate, groupId, page, perPage);
+    const reportData = await fetchReportData(fromDate, toDate, groupId, page, perPage, enterpriseId);
 
     const data = transformData(reportData, perPage);
 
