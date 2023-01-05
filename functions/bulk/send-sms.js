@@ -41,7 +41,8 @@ const handler = async (event) => {
         requestUserId: body.requestUserId,
         clientId: body.clientId,
         enterpriseId: body.enterpriseId,
-        groupId: body.groupId
+        groupId: body.groupId,
+        senderId: body.senderId
       };
 
       const params = {

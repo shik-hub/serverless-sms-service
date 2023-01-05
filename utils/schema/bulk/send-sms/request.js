@@ -27,6 +27,7 @@ const requestSchema = {
     clientId: { type: "integer", minimum: 0 },
     enterpriseId: { type: "integer", minimum: 0 },
     groupId: { type: "integer", minimum: 0 },
+    senderId: { type: "string", pattern: "^(?=[A-Za-z])([A-Za-z0-9-]{1,11})$" },
   },
   required: [
     "users",

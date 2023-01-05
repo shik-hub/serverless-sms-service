@@ -66,14 +66,15 @@ const insertRequestInDB = async (body) => {
       body.clientId,
       body.enterpriseId,
       body.groupId,
+      body.senderId
     ];
 
     const response = await auroraClient.query(
       `INSERT INTO ${tables.SMS_STATUS} \
       (status, phone_number, sms_content, sms_type, sms_category, recipient_user_id, \
-      recipient_user_name, request_user_id, client_id, enterprise_id, group_id, \
+      recipient_user_name, request_user_id, client_id, enterprise_id, group_id, sender_id, \
       initiated_timestamp, created_at, updated_at) \
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now(), now(), now())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now(), now(), now())
       RETURNING sms_id`,
       data
     );

@@ -16,6 +16,7 @@ const schema = {
   price_in_usd DECIMAL(10,7), /* price spent to send the SMS */ \
   status VARCHAR(20) NOT NULL, /* current status. Can be SUCCESS, FAILURE, PENDING */ \
   provider_response TEXT, /* response from the SMS provider. Should explain status */ \
+  sender_id VARCHAR(20) NOT NULL, /* client id */ \
   client_id BIGINT, /* client id */ \
   enterprise_id BIGINT, /* enterprise id */ \
   group_id BIGINT, /* group id */ \
