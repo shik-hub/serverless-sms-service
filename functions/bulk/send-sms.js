@@ -39,9 +39,11 @@ const handler = async (event) => {
         type: body.type,
         category: body.category,
         requestUserId: body.requestUserId,
+        requestUserName: body.requestUserName,
         clientId: body.clientId,
         enterpriseId: body.enterpriseId,
         groupId: body.groupId,
+        groupName: body.groupName,
         senderId: body.senderId
       };
 
