@@ -113,7 +113,6 @@ const transformData = (reportData, perPage) => {
 
       const pages = Math.ceil(totalCount / perPage);
 
-
       return { totalCount, pages, transformedData };
   } catch (err) {
     console.error("Error while transforming report data", { err });
@@ -121,7 +120,38 @@ const transformData = (reportData, perPage) => {
   }
 };
 
-const handler = async (event) => {
+const transformDataEnterprise = (reportData, perPage) => {
+  try {
+    let totalCount;
+    const transformedData = reportData.map(datum => {
+        if (!totalCount) totalCount = datum.total_count;
+        return {
+          smsId: datum.sms_id,
+          messageId: datum.message_id,
+          dateRequested: datum.initiated_timestamp,
+          dateSent: datum.sent_timestamp,
+          smsCategory: datum.sms_category,
+          requestUserName: datum.request_user_name,
+          status: datum.status,
+          statusReason: datum.provider_response,
+          price: datum.price_in_usd,
+          clientId: datum.client_id,
+          enterpriseId: datum.enterprise_id,
+          groupId: datum.group_id,
+          groupName: datum.group_name
+        }
+      });
+
+      const pages = Math.ceil(totalCount / perPage);
+
+      return { totalCount, pages, transformedData };
+  } catch (err) {
+    console.error("Error while transforming enterprise report data", { err });
+    throw new Error("Error while transforming enterprise report data");
+  }
+};
+
+const executeReport = async (event, transformDataFunction) => {
   try {
     const params = event.queryStringParameters;
 
@@ -154,15 +184,39 @@ const handler = async (event) => {
 
     const reportData = await fetchReportData(fromDate, toDate, groupId, page, perPage, enterpriseId);
 
-    const data = transformData(reportData, perPage);
+    const data = transformDataFunction(reportData, perPage);
 
     console.log("Report has been generated successfully");
-    return generateResponse(200, {
+    return {
       totalPages: data.pages,
       totalEntries: data.totalCount,
       currentPage: page,
       report: data.transformedData
+    };
+  } catch (err) {
+    console.error("Error while fetching report", { err });
+    return generateResponse(500, {
+      message: "Some error occurred while fetching report",
     });
+  }
+}
+
+const handler = async (event) => {
+  try {
+    const response = await executeReport(event, transformData);
+    return generateResponse(200, response);
+  } catch (err) {
+    console.error("Error while fetching report", { err });
+    return generateResponse(500, {
+      message: "Some error occurred while fetching report",
+    });
+  }
+}
+
+const handlerEnterprise = async (event) => {
+  try {
+    const response = await executeReport(event, transformDataEnterprise);
+    return generateResponse(200, response);
   } catch (err) {
     console.error("Error while fetching report", { err });
     return generateResponse(500, {
@@ -173,4 +227,5 @@ const handler = async (event) => {
 
 module.exports = {
   handler,
+  handlerEnterprise
 };
